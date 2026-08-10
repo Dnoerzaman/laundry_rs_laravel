@@ -9,11 +9,10 @@ use App\Models\PemakaianChemical;     // untuk hitung jumlah transaksi pemakaian
 use App\Models\Tugas;                 // untuk hitung rencana kerja yang masih aktif
 use App\Models\BeratLinenHarian;      // untuk agregasi total berat linen per ruangan
 
-// Carbon adalah library tanggal bawaan Laravel, pengganti `timezone` + `calendar` di Django
+// Carbon adalah library tanggal bawaan Laravel
 use Carbon\Carbon;
 
 // Inertia dipakai untuk mengirim data (props) dari Controller ke komponen Vue,
-// pengganti `render(request, 'template.html', context)` di Django
 use Inertia\Inertia;
 
 // Controller khusus untuk halaman dashboard utama
@@ -22,13 +21,13 @@ class DashboardController extends Controller
     // Method index() dipanggil saat user membuka route '/dashboard'
     public function index()
     {
-        // Ambil tanggal hari ini (tanpa jam), setara `timezone.now().date()` di Django
+        // Ambil tanggal hari ini (tanpa jam)
         $today = Carbon::today();
 
         // --- Kalkulasi rentang minggu ini ---
-        // startOfWeek() di Carbon defaultnya mulai hari Senin (sama seperti Django weekday()==0)
+        // startOfWeek() di Carbon mengambil tanggal Senin di minggu ini (defaultnya Senin, bisa diubah ke Minggu atau lainnya)
         $startOfWeek = $today->copy()->startOfWeek();
-        // Akhir minggu kerja = Senin + 5 hari = Sabtu (bukan Minggu), sesuai logika Django asli
+        // Akhir minggu kerja = Senin + 5 hari = Sabtu (bukan Minggu)
         $endOfWeek = $startOfWeek->copy()->addDays(5);
 
         // --- Kalkulasi rentang bulan ini ---
@@ -45,16 +44,15 @@ class DashboardController extends Controller
         // Hitung jumlah baris PemakaianChemical yang tanggalnya ada di rentang bulan ini
         $pemakaianChemicalBulanIni = PemakaianChemical::whereBetween('tanggal', [$startOfMonth, $endOfMonth])->count();
 
-        // Hitung jumlah Tugas yang statusnya BUKAN 'Selesai' (setara .exclude(status='Selesai') Django)
+        // Hitung jumlah Tugas yang statusnya BUKAN 'Selesai'
         $rencanaKerjaAktif = Tugas::where('status', '!=', 'Selesai')->count();
 
         // --- Data untuk tabel & chart berat linen per ruangan ---
 
-        // Ambil semua pilihan ruangan dari konstanta model (pengganti PilihanRuangan.choices Django)
+        // Ambil semua pilihan ruangan dari konstanta model
         $ruanganChoices = PenerimaanLinen::RUANGAN;
 
         // Query 1: total berat linen per ruangan, HANYA untuk rentang minggu ini
-        // selectRaw + groupBy = setara .values('ruangan').annotate(total=Sum('total_berat')) di Django
         // pluck('total', 'ruangan') mengubah hasil jadi array asosiatif: ['Rawat Inap' => 12.5, ...]
         $beratMingguan = BeratLinenHarian::whereBetween('tanggal', [$startOfWeek, $endOfWeek])
             ->selectRaw('ruangan, SUM(total_berat) as total') // jumlahkan kolom total_berat per grup
@@ -94,8 +92,7 @@ class DashboardController extends Controller
         }
 
         // Kirim semua data ke komponen Vue 'Dashboard' (resources/js/Pages/Dashboard.vue)
-        // Inertia::render() menggantikan render(request, 'accounts/dashboard.html', context) di Django —
-        // bedanya, di sini datanya dikirim sebagai JSON langsung ke komponen Vue, bukan di-render server-side jadi HTML
+        // Inertia::render() akan mengirim data ini sebagai props ke komponen Vue, sehingga bisa diakses di template dan script Vue.
         return Inertia::render('Dashboard', [
             'penerimaanBulanIni' => $penerimaanBulanIni,               // angka untuk kartu 1
             'pemakaianChemicalBulanIni' => $pemakaianChemicalBulanIni, // angka untuk kartu 2

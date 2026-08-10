@@ -4,6 +4,9 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ChecklistController;
 use App\Http\Controllers\BeratLinenController;
+use App\Http\Controllers\StokChemicalController;
+use App\Http\Controllers\PemakaianChemicalController;
+use App\Http\Controllers\PenerimaanChemicalController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -32,6 +35,14 @@ Route::middleware('auth')->group(function () {
            ->parameters(['berat' => 'beratLinen'])
            ->names('berat-linen')
             ->except(['show']);
+    Route::resource('stok-chemical', StokChemicalController::class)->except(['show']);
+    Route::get('/pemakaian-chemical', [PemakaianChemicalController::class, 'index'])->name('pemakaian-chemical.index');
+    Route::get('/pemakaian-chemical/catat', [PemakaianChemicalController::class, 'create'])->name('pemakaian-chemical.create');
+    Route::post('/pemakaian-chemical', [PemakaianChemicalController::class, 'store'])->name('pemakaian-chemical.store');
+
+    Route::get('/penerimaan-chemical', [PenerimaanChemicalController::class, 'index'])->name('penerimaan-chemical.index');
+    Route::get('/penerimaan-chemical/tambah', [PenerimaanChemicalController::class, 'create'])->name('penerimaan-chemical.create');
+    Route::post('/penerimaan-chemical', [PenerimaanChemicalController::class, 'store'])->name('penerimaan-chemical.store');
 
 });
 

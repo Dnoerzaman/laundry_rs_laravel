@@ -41,7 +41,8 @@ const showingNavigationDropdown = ref(false);
                                 </NavLink>
                                 <NavLink :href="route('checklist.create')" :active="route().current('checklist.*')">
                                 Checklist Linen </NavLink>
-                                <NavLink href="#" :active="false">Manajemen Stok</NavLink>
+                                <NavLink :href="route('stok-chemical.index')" :active="route().current('*chemical*')">
+                                Manajemen Chemical</NavLink>
                                 <NavLink href="#" :active="false">Aset</NavLink>
                                 <NavLink href="#" :active="false">Log Pekerjaan</NavLink>
                                 <NavLink href="#" :active="false">Rencana Kerja</NavLink>
@@ -149,13 +150,15 @@ const showingNavigationDropdown = ref(false);
                 >
                     <div class="space-y-1 pb-3 pt-2">
                         <ResponsiveNavLink
-                            :href="route('dashboard')"
-                            :active="route().current('dashboard')"
-                        >
+                            :href="route('dashboard')":active="route().current('dashboard')">
                             Dashboard
                         </ResponsiveNavLink>
-                        <ResponsiveNavLink href="#" :active="false">Checklist Linen</ResponsiveNavLink>
-                        <ResponsiveNavLink href="#" :active="false">Manajemen Stok</ResponsiveNavLink>
+                        <ResponsiveNavLink :href="route('checklist.create')" :active="route().current('checklist.*')">
+                            Checklist Linen
+                        </ResponsiveNavLink>
+                        <ResponsiveNavLink :href="route('stok-chemical.index')" :active="route().current('*chemical*')">
+                            Manajemen Chemical
+                        </ResponsiveNavLink>
                         <ResponsiveNavLink href="#" :active="false">Aset</ResponsiveNavLink>
                         <ResponsiveNavLink href="#" :active="false">Log Pekerjaan</ResponsiveNavLink>
                         <ResponsiveNavLink href="#" :active="false">Rencana Kerja</ResponsiveNavLink>
