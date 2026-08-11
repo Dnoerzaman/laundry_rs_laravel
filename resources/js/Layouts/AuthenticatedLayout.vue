@@ -43,6 +43,9 @@ const showingNavigationDropdown = ref(false);
                                 Checklist Linen </NavLink>
                                 <NavLink :href="route('stok-chemical.index')" :active="route().current('*chemical*')">
                                 Manajemen Chemical</NavLink>
+                                <NavLink :href="route('stok-linen.index')" :active="route().current('stok-linen.*') || route().current('transaksi-linen.*')">
+                                    Stok Linen
+                                </NavLink>
                                 <NavLink href="#" :active="false">Aset</NavLink>
                                 <NavLink href="#" :active="false">Log Pekerjaan</NavLink>
                                 <NavLink href="#" :active="false">Rencana Kerja</NavLink>

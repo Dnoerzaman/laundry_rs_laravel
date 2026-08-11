@@ -7,6 +7,8 @@ use App\Http\Controllers\BeratLinenController;
 use App\Http\Controllers\StokChemicalController;
 use App\Http\Controllers\PemakaianChemicalController;
 use App\Http\Controllers\PenerimaanChemicalController;
+use App\Http\Controllers\StokLinenController;
+use App\Http\Controllers\TransaksiLinenController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -43,6 +45,15 @@ Route::middleware('auth')->group(function () {
     Route::get('/penerimaan-chemical', [PenerimaanChemicalController::class, 'index'])->name('penerimaan-chemical.index');
     Route::get('/penerimaan-chemical/tambah', [PenerimaanChemicalController::class, 'create'])->name('penerimaan-chemical.create');
     Route::post('/penerimaan-chemical', [PenerimaanChemicalController::class, 'store'])->name('penerimaan-chemical.store');
+
+    Route::get('/stok-linen', [StokLinenController::class, 'index'])->name('stok-linen.index');
+    Route::get('/stok-linen/tambah', [StokLinenController::class, 'create'])->name('stok-linen.create');
+    Route::post('/stok-linen', [StokLinenController::class, 'store'])->name('stok-linen.store');
+    Route::get('/stok-linen/{stokLinen}/ubah', [StokLinenController::class, 'edit'])->name('stok-linen.edit');
+    Route::put('/stok-linen/{stokLinen}', [StokLinenController::class, 'update'])->name('stok-linen.update');
+
+    Route::get('/stok-linen/transaksi', [TransaksiLinenController::class, 'create'])->name('transaksi-linen.create');
+    Route::post('/stok-linen/transaksi', [TransaksiLinenController::class, 'store'])->name('transaksi-linen.store');
 
 });
 
