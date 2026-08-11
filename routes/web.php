@@ -9,6 +9,8 @@ use App\Http\Controllers\PemakaianChemicalController;
 use App\Http\Controllers\PenerimaanChemicalController;
 use App\Http\Controllers\StokLinenController;
 use App\Http\Controllers\TransaksiLinenController;
+use App\Http\Controllers\AsetController;
+use App\Http\Controllers\TransaksiAsetController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -54,6 +56,12 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/stok-linen/transaksi', [TransaksiLinenController::class, 'create'])->name('transaksi-linen.create');
     Route::post('/stok-linen/transaksi', [TransaksiLinenController::class, 'store'])->name('transaksi-linen.store');
+
+    Route::resource('aset', AsetController::class)->except(['show']);
+
+    Route::get('/aset/transaksi', [TransaksiAsetController::class, 'create'])->name('transaksi-aset.create');
+    Route::post('/aset/transaksi', [TransaksiAsetController::class, 'store'])->name('transaksi-aset.store');
+
 
 });
 

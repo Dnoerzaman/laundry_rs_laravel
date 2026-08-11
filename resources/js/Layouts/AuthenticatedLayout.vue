@@ -46,7 +46,9 @@ const showingNavigationDropdown = ref(false);
                                 <NavLink :href="route('stok-linen.index')" :active="route().current('stok-linen.*') || route().current('transaksi-linen.*')">
                                     Stok Linen
                                 </NavLink>
-                                <NavLink href="#" :active="false">Aset</NavLink>
+                                <NavLink :href="route('aset.index')" :active="route().current('aset.*') || route().current('transaksi-aset.*')">
+                                    Aset Laundry
+                                </NavLink>
                                 <NavLink href="#" :active="false">Log Pekerjaan</NavLink>
                                 <NavLink href="#" :active="false">Rencana Kerja</NavLink>
                                 <NavLink href="#" :active="false">Suhu</NavLink>
