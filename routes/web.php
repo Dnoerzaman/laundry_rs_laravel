@@ -34,11 +34,10 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     Route::get('/checklist/tambah', [ChecklistController::class, 'create'])->name('checklist.create');
     Route::post('/checklist', [ChecklistController::class, 'store'])->name('checklist.store');
+
     Route::resource('berat-linen', BeratLinenController::class)->except(['show']);
-    Route::resource('checklist/berat', BeratLinenController::class)
-           ->parameters(['berat' => 'beratLinen'])
-           ->names('berat-linen')
-            ->except(['show']);
+    Route::resource('checklist/berat', BeratLinenController::class)->parameters(['berat' => 'beratLinen'])->names('berat-linen')->except(['show']);
+
     Route::resource('stok-chemical', StokChemicalController::class)->except(['show']);
     Route::get('/pemakaian-chemical', [PemakaianChemicalController::class, 'index'])->name('pemakaian-chemical.index');
     Route::get('/pemakaian-chemical/catat', [PemakaianChemicalController::class, 'create'])->name('pemakaian-chemical.create');
@@ -61,8 +60,6 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/aset/transaksi', [TransaksiAsetController::class, 'create'])->name('transaksi-aset.create');
     Route::post('/aset/transaksi', [TransaksiAsetController::class, 'store'])->name('transaksi-aset.store');
-
-
 });
 
 require __DIR__.'/auth.php';
