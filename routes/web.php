@@ -12,6 +12,7 @@ use App\Http\Controllers\TransaksiLinenController;
 use App\Http\Controllers\AsetController;
 use App\Http\Controllers\TransaksiAsetController;
 use App\Http\Controllers\SuhuController;
+use App\Http\Controllers\LogPekerjaanController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -63,6 +64,10 @@ Route::middleware('auth')->group(function () {
     Route::post('/aset/transaksi', [TransaksiAsetController::class, 'store'])->name('transaksi-aset.store');
 
     Route::resource('suhu', SuhuController::class)->except(['show']);
+
+    Route::resource('log-pekerjaan', LogPekerjaanController::class)->except(['show']);
 });
+
+
 
 require __DIR__.'/auth.php';
