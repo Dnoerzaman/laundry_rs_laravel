@@ -11,6 +11,7 @@ use App\Http\Controllers\StokLinenController;
 use App\Http\Controllers\TransaksiLinenController;
 use App\Http\Controllers\AsetController;
 use App\Http\Controllers\TransaksiAsetController;
+use App\Http\Controllers\SuhuController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -60,6 +61,8 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/aset/transaksi', [TransaksiAsetController::class, 'create'])->name('transaksi-aset.create');
     Route::post('/aset/transaksi', [TransaksiAsetController::class, 'store'])->name('transaksi-aset.store');
+
+    Route::resource('suhu', SuhuController::class)->except(['show']);
 });
 
 require __DIR__.'/auth.php';

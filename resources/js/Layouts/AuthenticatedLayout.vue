@@ -51,7 +51,8 @@ const showingNavigationDropdown = ref(false);
                                 </NavLink>
                                 <NavLink href="#" :active="false">Log Pekerjaan</NavLink>
                                 <NavLink href="#" :active="false">Rencana Kerja</NavLink>
-                                <NavLink href="#" :active="false">Suhu</NavLink>
+                                <NavLink :href="route('suhu.index')" :active="route().current('suhu.*')">Monitoring Suhu
+                                </NavLink>
                                 <NavLink href="#" :active="false">Rekap Laporan</NavLink>
                             </div>
                         </div>
