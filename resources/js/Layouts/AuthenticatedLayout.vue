@@ -41,6 +41,8 @@ const showingNavigationDropdown = ref(false);
                                 </NavLink>
                                 <NavLink :href="route('checklist.create')" :active="route().current('checklist.*')">
                                 Checklist Linen </NavLink>
+                                <NavLink :href="route('suhu.index')" :active="route().current('suhu.*')">Monitoring Suhu
+                                </NavLink>
                                 <NavLink :href="route('stok-chemical.index')" :active="route().current('*chemical*')">
                                 Manajemen Chemical</NavLink>
                                 <NavLink :href="route('stok-linen.index')" :active="route().current('stok-linen.*') || route().current('transaksi-linen.*')">
@@ -55,8 +57,8 @@ const showingNavigationDropdown = ref(false);
                                 <NavLink :href="route('biaya.index')" :active="route().current('biaya.*')">
                                     Biaya Pengeluaran
                                 </NavLink>
-                                <NavLink href="#" :active="false">Rencana Kerja</NavLink>
-                                <NavLink :href="route('suhu.index')" :active="route().current('suhu.*')">Monitoring Suhu
+                                <NavLink :href="route('schedule.index')" :active="route().current('schedule.*')">
+                                    Rencana Kerja
                                 </NavLink>
                                 <NavLink href="#" :active="false">Rekap Laporan</NavLink>
                             </div>

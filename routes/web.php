@@ -14,6 +14,7 @@ use App\Http\Controllers\TransaksiAsetController;
 use App\Http\Controllers\SuhuController;
 use App\Http\Controllers\LogPekerjaanController;
 use App\Http\Controllers\BiayaController;
+use App\Http\Controllers\TugasController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -69,8 +70,9 @@ Route::middleware('auth')->group(function () {
     Route::resource('log-pekerjaan', LogPekerjaanController::class)->except(['show']);
 
     Route::resource('biaya', BiayaController::class)->except(['show']);
+
+    Route::resource('schedule', TugasController::class) ->parameters(['schedule' => 'tugas']) ->except(['show']);
+
 });
-
-
 
 require __DIR__.'/auth.php';
