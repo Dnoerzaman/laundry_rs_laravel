@@ -13,6 +13,7 @@ use App\Http\Controllers\AsetController;
 use App\Http\Controllers\TransaksiAsetController;
 use App\Http\Controllers\SuhuController;
 use App\Http\Controllers\LogPekerjaanController;
+use App\Http\Controllers\BiayaController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -66,6 +67,8 @@ Route::middleware('auth')->group(function () {
     Route::resource('suhu', SuhuController::class)->except(['show']);
 
     Route::resource('log-pekerjaan', LogPekerjaanController::class)->except(['show']);
+
+    Route::resource('biaya', BiayaController::class)->except(['show']);
 });
 
 

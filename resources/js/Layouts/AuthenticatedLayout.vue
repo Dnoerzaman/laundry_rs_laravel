@@ -52,6 +52,9 @@ const showingNavigationDropdown = ref(false);
                                 <NavLink :href="route('log-pekerjaan.index')" :active="route().current('log-pekerjaan.*')">
                                     Log Pekerjaan
                                 </NavLink>
+                                <NavLink :href="route('biaya.index')" :active="route().current('biaya.*')">
+                                    Biaya Pengeluaran
+                                </NavLink>
                                 <NavLink href="#" :active="false">Rencana Kerja</NavLink>
                                 <NavLink :href="route('suhu.index')" :active="route().current('suhu.*')">Monitoring Suhu
                                 </NavLink>
