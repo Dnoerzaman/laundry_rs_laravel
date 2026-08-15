@@ -14,7 +14,8 @@ class StokChemical extends Model
     protected $fillable = ['nama_chemical', 'jumlah_stok', 'unit'];
 
     protected $casts = [
-        'jumlah_stok' => 'decimal:2',
+    'update_terakhir' => 'datetime',
+    'jumlah_stok' => 'float',
     ];
 
     protected static function booted()

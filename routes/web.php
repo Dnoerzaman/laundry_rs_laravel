@@ -15,6 +15,7 @@ use App\Http\Controllers\SuhuController;
 use App\Http\Controllers\LogPekerjaanController;
 use App\Http\Controllers\BiayaController;
 use App\Http\Controllers\TugasController;
+use App\Http\Controllers\LaporanController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -72,6 +73,24 @@ Route::middleware('auth')->group(function () {
     Route::resource('biaya', BiayaController::class)->except(['show']);
 
     Route::resource('schedule', TugasController::class) ->parameters(['schedule' => 'tugas']) ->except(['show']);
+
+    Route::get('/laporan', [LaporanController::class, 'index'])->name('laporan.index');
+
+    Route::get('/laporan/suhu', [LaporanController::class, 'suhu'])->name('laporan.suhu');
+        Route::get('/laporan/suhu/export', [LaporanController::class, 'suhuExport'])->name('laporan.suhu.export');
+
+        // // Export dengan filter tanggal (butuh ?start_date=&end_date=)
+        Route::get('/laporan/checklist/export', [LaporanController::class, 'checklistExport'])->name('laporan.checklist.export');
+        Route::get('/laporan/pemakaian-chemical/export', [LaporanController::class, 'pemakaianChemicalExport'])->name('laporan.pemakaian-chemical.export');
+        Route::get('/laporan/transaksi-linen/export', [LaporanController::class, 'transaksiLinenExport'])->name('laporan.transaksi-linen.export');
+        Route::get('/laporan/berat-linen/export', [LaporanController::class, 'beratLinenExport'])->name('laporan.berat-linen.export');
+        Route::get('/laporan/log-pekerjaan/export', [LaporanController::class, 'logPekerjaanExport'])->name('laporan.log-pekerjaan.export');
+        Route::get('/laporan/biaya/export', [LaporanController::class, 'biayaExport'])->name('laporan.biaya.export');
+
+        // // Export snapshot (TANPA filter tanggal)
+        Route::get('/laporan/aset/export', [LaporanController::class, 'asetExport'])->name('laporan.aset.export');
+        Route::get('/laporan/schedule/export', [LaporanController::class, 'scheduleExport'])->name('laporan.schedule.export');
+        Route::get('/laporan/stok-chemical/export', [LaporanController::class, 'stokChemicalExport'])->name('laporan.stok-chemical.export');
 
 });
 

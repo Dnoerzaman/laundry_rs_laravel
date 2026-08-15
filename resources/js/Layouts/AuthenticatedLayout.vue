@@ -60,7 +60,9 @@ const showingNavigationDropdown = ref(false);
                                 <NavLink :href="route('schedule.index')" :active="route().current('schedule.*')">
                                     Rencana Kerja
                                 </NavLink>
-                                <NavLink href="#" :active="false">Rekap Laporan</NavLink>
+                                <NavLink :href="route('laporan.index')" :active="route().current('laporan.*')">
+                                    Rekap Laporan
+                                </NavLink>
                             </div>
                         </div>
 
