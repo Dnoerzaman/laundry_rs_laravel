@@ -58,16 +58,37 @@ function submit() {
 <template>
     <AuthenticatedLayout>
         <template #header>
-            <div class="flex justify-between items-center">
-                <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                    Form Checklist Penerimaan Linen
-                </h2>
-                <!-- Link ke halaman daftar berat linen, setara tombol "Catat Berat Linen Kotor" di Django -->
-                <Link :href="route('berat-linen.index')"
-                      class="inline-flex items-center px-4 py-2 bg-sky-600 text-white rounded-md text-xs font-semibold uppercase tracking-widest hover:bg-sky-700">
-                    Catat Berat Linen Kotor
-                </Link>
-            </div>
+            <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+
+        <div>
+            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+                Form Penerimaan Linen
+            </h2>
+
+            <p class="text-sm text-gray-500 mt-1">
+                Catat penerimaan linen kotor dari ruangan.
+            </p>
+        </div>
+
+        <div class="flex gap-2">
+
+        <Link
+            :href="route('checklist.index')"
+            class="inline-flex items-center px-4 py-2 bg-gray-200 text-gray-700 rounded-md text-xs font-semibold uppercase tracking-widest hover:bg-gray-300"
+        >
+            Riwayat
+        </Link>
+
+        <Link
+            :href="route('berat-linen.index')"
+            class="inline-flex items-center px-4 py-2 bg-sky-600 text-white rounded-md text-xs font-semibold uppercase tracking-widest hover:bg-sky-700"
+        >
+            Catat Berat Linen
+        </Link>
+
+    </div>
+
+</div>
         </template>
 
         <Head title="Checklist Penerimaan Linen" />

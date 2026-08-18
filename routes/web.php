@@ -37,8 +37,35 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
-    Route::get('/checklist/tambah', [ChecklistController::class, 'create'])->name('checklist.create');
-    Route::post('/checklist', [ChecklistController::class, 'store'])->name('checklist.store');
+    
+     // ==============================
+    // PENERIMAAN LINEN
+    // ==============================
+
+    // Riwayat
+    Route::get('/checklist', [ChecklistController::class, 'index'])
+        ->name('checklist.index');
+
+    // Form tambah
+    Route::get('/checklist/tambah', [ChecklistController::class, 'create'])
+        ->name('checklist.create');
+
+    // Simpan
+    Route::post('/checklist', [ChecklistController::class, 'store'])
+        ->name('checklist.store');
+
+    // Detail
+    Route::get('/checklist/{penerimaan}', [ChecklistController::class, 'show'])
+        ->name('checklist.show');
+
+    // Form edit
+    Route::get('/checklist/{penerimaan}/ubah', [ChecklistController::class, 'edit'])
+        ->name('checklist.edit');
+
+    // Update
+    Route::put('/checklist/{penerimaan}', [ChecklistController::class, 'update'])
+        ->name('checklist.update');
+
 
     Route::resource('berat-linen', BeratLinenController::class)->except(['show']);
     Route::resource('checklist/berat', BeratLinenController::class)->parameters(['berat' => 'beratLinen'])->names('berat-linen')->except(['show']);
