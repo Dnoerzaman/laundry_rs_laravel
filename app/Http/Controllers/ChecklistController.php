@@ -22,6 +22,8 @@ class ChecklistController extends Controller
         $query = PenerimaanLinen::with([
             'petugas',
             'items',
+            'updatedBy',
+            'items',
         ])->latest('tanggal')->latest('jam');
 
         // Filter tanggal mulai
@@ -84,6 +86,9 @@ class ChecklistController extends Controller
                 'jam' => $request->validated('jam'),
                 'ruangan' => $request->validated('ruangan'),
                 'petugas_id' => $request->user()->id,
+                //audit trail
+                'created_by' => $request->user()->id,
+                'updated_by' => $request->user()->id,
             ]);
 
             foreach ($request->validated('items') as $item) {
@@ -105,6 +110,8 @@ class ChecklistController extends Controller
     {
         $penerimaan->load([
             'petugas',
+            'createdBy',
+            'updatedBy',
             'items',
         ]);
 
@@ -120,7 +127,7 @@ class ChecklistController extends Controller
      */
     public function edit(PenerimaanLinen $penerimaan)
     {
-        $penerimaan->load('items');
+        $penerimaan->load('items', 'createdBy', 'updatedBy');
 
         return Inertia::render('Checklist/Edit', [
             'penerimaan' => $penerimaan,
@@ -146,6 +153,8 @@ class ChecklistController extends Controller
                 'tanggal' => $request->validated('tanggal'),
                 'jam' => $request->validated('jam'),
                 'ruangan' => $request->validated('ruangan'),
+                //audit trail
+                'updated_by' => $request->user()->id,
             ]);
 
             /*
