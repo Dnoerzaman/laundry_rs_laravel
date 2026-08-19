@@ -7,213 +7,807 @@ import { Head, Link, useForm } from '@inertiajs/vue3';
 
 // Props dari ChecklistController@create — daftar pilihan untuk tiap dropdown
 const props = defineProps({
-    ruanganOptions: Array, // daftar ruangan, misal ['Kamar Bedah', 'Rawat Inap', ...]
-    itemOptions: Array,     // daftar nama item linen, misal ['Baju Perawat', 'Handuk', ...]
-    kondisiOptions: Array,   // daftar kondisi: ['Baik', 'Noda', 'Rusak']
+    ruanganOptions: Array,
+    itemOptions: Array,
+    kondisiOptions: Array,
 });
 
-// Fungsi kecil untuk membuat 1 baris item kosong (dipakai saat tambah baris baru & inisialisasi awal)
+/*
+|--------------------------------------------------------------------------
+| Helper
+|--------------------------------------------------------------------------
+*/
+
+/**
+ * Membuat satu baris item linen baru.
+ */
 function itemKosong() {
     return {
-        nama_item: props.itemOptions[0] ?? '', // default: pilihan pertama di daftar
-        jumlah: 1,                                // default jumlah 1
-        kondisi: 'Baik',                           // default kondisi Baik
-        keterangan: '',                             // kosong, opsional
+        nama_item: props.itemOptions[0] ?? '',
+        jumlah: 1,
+        kondisi: props.kondisiOptions?.[0] ?? 'Baik',
+        keterangan: '',
     };
 }
 
-// form: object reaktif yang menampung SEMUA data yang akan dikirim ke server sekaligus
-// (header + array items), lebih simpel dibanding formset Django yang butuh manajemen
-// TOTAL_FORMS/INITIAL_FORMS secara manual lewat DOM.
+/**
+ * Mengecek apakah kondisi membutuhkan keterangan.
+ *
+ * Sesuai aturan bisnis:
+ * - Noda  -> wajib keterangan
+ * - Rusak -> wajib keterangan
+ */
+function membutuhkanKeterangan(kondisi) {
+    return ['Noda', 'Rusak'].includes(kondisi);
+}
+
+/**
+ * Mengecek apakah item tertentu merupakan duplikat.
+ */
+function itemDuplikat(index) {
+    const namaItem = form.items[index]?.nama_item;
+
+    if (!namaItem) {
+        return false;
+    }
+
+    return form.items.some(
+        (item, itemIndex) =>
+            itemIndex !== index &&
+            item.nama_item === namaItem
+    );
+}
+
+/*
+|--------------------------------------------------------------------------
+| Form
+|--------------------------------------------------------------------------
+*/
+
 const form = useForm({
-    tanggal: new Date().toISOString().slice(0, 10), // default hari ini, format YYYY-MM-DD
-    jam: new Date().toTimeString().slice(0, 5),       // default jam sekarang, format HH:MM
-    ruangan: props.ruanganOptions[0] ?? '',            // default: ruangan pertama di daftar
-    items: [itemKosong()],                              // mulai dengan 1 baris item kosong (setara extra=1 Django)
+    tanggal: new Date().toISOString().slice(0, 10),
+
+    jam: new Date().toTimeString().slice(0, 5),
+
+    ruangan: props.ruanganOptions[0] ?? '',
+
+    items: [itemKosong()],
 });
 
-// Menambah 1 baris item baru ke array form.items
-// Ini jauh lebih simpel dibanding Django yang harus clone <template> HTML manual lewat JS
+/*
+|--------------------------------------------------------------------------
+| Item Actions
+|--------------------------------------------------------------------------
+*/
+
+/**
+ * Menambahkan item baru.
+ */
 function tambahItem() {
     form.items.push(itemKosong());
 }
 
-// Menghapus 1 baris item berdasarkan posisinya (index) di array
+/**
+ * Menghapus item berdasarkan index.
+ *
+ * Minimal harus ada satu item.
+ */
 function hapusItem(index) {
-    // Minimal harus ada 1 baris tersisa (setara min_num=1 di Django), jadi kalau tinggal 1, tidak boleh dihapus
     if (form.items.length > 1) {
-        form.items.splice(index, 1); // splice: hapus 1 elemen mulai dari posisi `index`
+        form.items.splice(index, 1);
     }
 }
 
-// Fungsi yang dijalankan saat form di-submit
+/*
+|--------------------------------------------------------------------------
+| Validation Helper
+|--------------------------------------------------------------------------
+*/
+
+/**
+ * Validasi frontend sebelum request dikirim ke Laravel.
+ *
+ * Validasi backend tetap menjadi validasi utama.
+ */
+function validasiFrontend() {
+    form.clearErrors();
+
+    let valid = true;
+
+    /*
+    |--------------------------------------------------------------------------
+    | Validasi tanggal
+    |--------------------------------------------------------------------------
+    */
+
+    if (!form.tanggal) {
+        form.setError(
+            'tanggal',
+            'Tanggal penerimaan wajib diisi.'
+        );
+
+        valid = false;
+    } else {
+        const tanggalInput = new Date(`${form.tanggal}T00:00:00`);
+
+        const sekarang = new Date();
+
+        const tanggalHariIni = new Date(
+            sekarang.getFullYear(),
+            sekarang.getMonth(),
+            sekarang.getDate()
+        );
+
+        if (tanggalInput > tanggalHariIni) {
+            form.setError(
+                'tanggal',
+                'Tanggal penerimaan tidak boleh melebihi hari ini.'
+            );
+
+            valid = false;
+        }
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Validasi jam
+    |--------------------------------------------------------------------------
+    */
+
+    if (!form.jam) {
+        form.setError(
+            'jam',
+            'Jam penerimaan wajib diisi.'
+        );
+
+        valid = false;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Validasi ruangan
+    |--------------------------------------------------------------------------
+    */
+
+    if (!form.ruangan) {
+        form.setError(
+            'ruangan',
+            'Ruangan wajib dipilih.'
+        );
+
+        valid = false;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Validasi jumlah item
+    |--------------------------------------------------------------------------
+    */
+
+    if (!form.items.length) {
+        form.setError(
+            'items',
+            'Minimal harus ada 1 item linen.'
+        );
+
+        valid = false;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Validasi setiap item
+    |--------------------------------------------------------------------------
+    */
+
+    form.items.forEach((item, index) => {
+
+        /*
+        |--------------------------------------------------------------------------
+        | Nama item
+        |--------------------------------------------------------------------------
+        */
+
+        if (!item.nama_item) {
+            form.setError(
+                `items.${index}.nama_item`,
+                'Nama item linen wajib dipilih.'
+            );
+
+            valid = false;
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Duplikasi item
+        |--------------------------------------------------------------------------
+        */
+
+        if (itemDuplikat(index)) {
+            form.setError(
+                `items.${index}.nama_item`,
+                'Item linen yang sama tidak boleh dimasukkan lebih dari satu kali.'
+            );
+
+            valid = false;
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Jumlah
+        |--------------------------------------------------------------------------
+        */
+
+        const jumlah = Number(item.jumlah);
+
+        if (!Number.isInteger(jumlah)) {
+            form.setError(
+                `items.${index}.jumlah`,
+                'Jumlah linen harus berupa angka bulat.'
+            );
+
+            valid = false;
+        } else if (jumlah < 1) {
+            form.setError(
+                `items.${index}.jumlah`,
+                'Jumlah linen minimal 1.'
+            );
+
+            valid = false;
+        } else if (jumlah > 10000) {
+            form.setError(
+                `items.${index}.jumlah`,
+                'Jumlah linen tidak boleh lebih dari 10.000.'
+            );
+
+            valid = false;
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Kondisi
+        |--------------------------------------------------------------------------
+        */
+
+        if (!item.kondisi) {
+            form.setError(
+                `items.${index}.kondisi`,
+                'Kondisi linen wajib dipilih.'
+            );
+
+            valid = false;
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Keterangan
+        |--------------------------------------------------------------------------
+        */
+
+        const keterangan = String(
+            item.keterangan ?? ''
+        ).trim();
+
+        if (
+            membutuhkanKeterangan(item.kondisi) &&
+            !keterangan
+        ) {
+            form.setError(
+                `items.${index}.keterangan`,
+                'Keterangan wajib diisi untuk linen dengan kondisi Noda atau Rusak.'
+            );
+
+            valid = false;
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Panjang keterangan
+        |--------------------------------------------------------------------------
+        */
+
+        if (keterangan.length > 255) {
+            form.setError(
+                `items.${index}.keterangan`,
+                'Keterangan maksimal 255 karakter.'
+            );
+
+            valid = false;
+        }
+    });
+
+    return valid;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Submit
+|--------------------------------------------------------------------------
+*/
+
 function submit() {
-    // form.post(): kirim data ke route 'checklist.store' lewat method POST
-    // Kalau server balas error validasi, form.errors otomatis terisi dan komponen re-render menampilkan pesan error
-    form.post(route('checklist.store'));
+    /*
+     * Validasi frontend hanya untuk memberikan feedback
+     * lebih cepat kepada user.
+     *
+     * Validasi backend Laravel tetap menjadi pengaman utama.
+     */
+    if (!validasiFrontend()) {
+        return;
+    }
+
+    form.post(route('checklist.store'), {
+        preserveScroll: true,
+    });
 }
 </script>
 
 <template>
     <AuthenticatedLayout>
+
         <template #header>
-            <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+            <div
+                class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3"
+            >
 
-        <div>
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                Form Penerimaan Linen
-            </h2>
+                <div>
+                    <h2
+                        class="font-semibold text-xl text-gray-800 leading-tight"
+                    >
+                        Form Penerimaan Linen
+                    </h2>
 
-            <p class="text-sm text-gray-500 mt-1">
-                Catat penerimaan linen kotor dari ruangan.
-            </p>
-        </div>
+                    <p class="text-sm text-gray-500 mt-1">
+                        Catat penerimaan linen kotor dari ruangan.
+                    </p>
+                </div>
 
-        <div class="flex gap-2">
+                <div class="flex gap-2">
 
-        <Link
-            :href="route('checklist.index')"
-            class="inline-flex items-center px-4 py-2 bg-gray-200 text-gray-700 rounded-md text-xs font-semibold uppercase tracking-widest hover:bg-gray-300"
-        >
-            Riwayat
-        </Link>
+                    <Link
+                        :href="route('checklist.index')"
+                        class="inline-flex items-center px-4 py-2 bg-gray-200 text-gray-700 rounded-md text-xs font-semibold uppercase tracking-widest hover:bg-gray-300"
+                    >
+                        Riwayat
+                    </Link>
 
-        <Link
-            :href="route('berat-linen.index')"
-            class="inline-flex items-center px-4 py-2 bg-sky-600 text-white rounded-md text-xs font-semibold uppercase tracking-widest hover:bg-sky-700"
-        >
-            Catat Berat Linen
-        </Link>
+                    <Link
+                        :href="route('berat-linen.index')"
+                        class="inline-flex items-center px-4 py-2 bg-sky-600 text-white rounded-md text-xs font-semibold uppercase tracking-widest hover:bg-sky-700"
+                    >
+                        Catat Berat Linen
+                    </Link>
 
-    </div>
-
-</div>
+                </div>
+            </div>
         </template>
 
         <Head title="Checklist Penerimaan Linen" />
 
         <div class="py-12">
+
             <div class="max-w-5xl mx-auto sm:px-6 lg:px-8">
-                <!-- @submit.prevent: mencegah reload halaman bawaan browser, ditangani lewat fungsi submit() di atas -->
-                <form @submit.prevent="submit" class="space-y-6">
 
-                    <!-- Kartu 1: Informasi header (tanggal, jam, ruangan) -->
+                <form
+                    @submit.prevent="submit"
+                    class="space-y-6"
+                >
+
+                    <!--
+                    |--------------------------------------------------------------------------
+                    | KARTU 1 - INFORMASI PENERIMAAN
+                    |--------------------------------------------------------------------------
+                    -->
+
                     <div class="bg-white rounded-lg shadow p-6">
-                        <h3 class="font-medium text-gray-800 mb-4">Informasi Penerimaan Linen Kotor</h3>
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
 
-                            <!-- Input tanggal -->
+                        <h3
+                            class="font-medium text-gray-800 mb-4"
+                        >
+                            Informasi Penerimaan Linen Kotor
+                        </h3>
+
+                        <div
+                            class="grid grid-cols-1 md:grid-cols-3 gap-4"
+                        >
+
+                            <!-- Tanggal -->
+
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Tanggal</label>
-                                <!-- v-model: two-way binding, tiap ketikan otomatis update form.tanggal -->
-                                <input type="date" v-model="form.tanggal"
-                                       class="w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500" />
-                                <!-- Tampilkan pesan error hanya kalau ada error untuk field 'tanggal' -->
-                                <p v-if="form.errors.tanggal" class="text-sm text-red-600 mt-1">{{ form.errors.tanggal }}</p>
+
+                                <label
+                                    class="block text-sm font-medium text-gray-700 mb-1"
+                                >
+                                    Tanggal
+                                </label>
+
+                                <input
+                                    type="date"
+                                    v-model="form.tanggal"
+                                    :max="
+                                        new Date()
+                                            .toISOString()
+                                            .slice(0, 10)
+                                    "
+                                    class="w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                />
+
+                                <p
+                                    v-if="form.errors.tanggal"
+                                    class="text-sm text-red-600 mt-1"
+                                >
+                                    {{ form.errors.tanggal }}
+                                </p>
+
                             </div>
 
-                            <!-- Input jam -->
+                            <!-- Jam -->
+
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Jam</label>
-                                <input type="time" v-model="form.jam"
-                                       class="w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500" />
-                                <p v-if="form.errors.jam" class="text-sm text-red-600 mt-1">{{ form.errors.jam }}</p>
+
+                                <label
+                                    class="block text-sm font-medium text-gray-700 mb-1"
+                                >
+                                    Jam
+                                </label>
+
+                                <input
+                                    type="time"
+                                    v-model="form.jam"
+                                    class="w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                />
+
+                                <p
+                                    v-if="form.errors.jam"
+                                    class="text-sm text-red-600 mt-1"
+                                >
+                                    {{ form.errors.jam }}
+                                </p>
+
                             </div>
 
-                            <!-- Dropdown ruangan -->
+                            <!-- Ruangan -->
+
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Ruangan</label>
-                                <select v-model="form.ruangan"
-                                        class="w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                                    <!-- v-for: looping array ruanganOptions untuk bikin daftar <option> -->
-                                    <option v-for="opt in ruanganOptions" :key="opt" :value="opt">{{ opt }}</option>
+
+                                <label
+                                    class="block text-sm font-medium text-gray-700 mb-1"
+                                >
+                                    Ruangan
+                                </label>
+
+                                <select
+                                    v-model="form.ruangan"
+                                    class="w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                >
+
+                                    <option
+                                        v-for="opt in ruanganOptions"
+                                        :key="opt"
+                                        :value="opt"
+                                    >
+                                        {{ opt }}
+                                    </option>
+
                                 </select>
-                                <p v-if="form.errors.ruangan" class="text-sm text-red-600 mt-1">{{ form.errors.ruangan }}</p>
+
+                                <p
+                                    v-if="form.errors.ruangan"
+                                    class="text-sm text-red-600 mt-1"
+                                >
+                                    {{ form.errors.ruangan }}
+                                </p>
+
                             </div>
+
                         </div>
                     </div>
 
-                    <!-- Kartu 2: Tabel item linen (dinamis, bisa tambah/hapus baris) -->
-                    <div class="bg-white rounded-lg shadow p-6">
-                        <h3 class="font-medium text-gray-800 mb-4">Checklist Item Linen</h3>
 
-                        <!-- Pesan error kalau array items kosong / kurang dari 1 -->
-                        <p v-if="form.errors.items" class="text-sm text-red-600 mb-3">{{ form.errors.items }}</p>
+                    <!--
+                    |--------------------------------------------------------------------------
+                    | KARTU 2 - ITEM LINEN
+                    |--------------------------------------------------------------------------
+                    -->
+
+                    <div class="bg-white rounded-lg shadow p-6">
+
+                        <h3
+                            class="font-medium text-gray-800 mb-4"
+                        >
+                            Checklist Item Linen
+                        </h3>
+
+                        <p
+                            v-if="form.errors.items"
+                            class="text-sm text-red-600 mb-3"
+                        >
+                            {{ form.errors.items }}
+                        </p>
 
                         <div class="overflow-x-auto">
-                            <table class="min-w-full divide-y divide-gray-200 border">
+
+                            <table
+                                class="min-w-full divide-y divide-gray-200 border"
+                            >
+
                                 <thead class="bg-gray-50">
+
                                     <tr>
-                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase w-1/3">Nama Item</th>
-                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase w-24">Jumlah</th>
-                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase w-40">Kondisi</th>
-                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Keterangan</th>
-                                        <th class="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase w-16">Aksi</th>
+
+                                        <th
+                                            class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase w-1/3"
+                                        >
+                                            Nama Item
+                                        </th>
+
+                                        <th
+                                            class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase w-24"
+                                        >
+                                            Jumlah
+                                        </th>
+
+                                        <th
+                                            class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase w-40"
+                                        >
+                                            Kondisi
+                                        </th>
+
+                                        <th
+                                            class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase"
+                                        >
+                                            Keterangan
+                                        </th>
+
+                                        <th
+                                            class="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase w-16"
+                                        >
+                                            Aksi
+                                        </th>
+
                                     </tr>
+
                                 </thead>
-                                <tbody class="divide-y divide-gray-200">
-                                    <!-- v-for dengan (item, index): item = isi barisnya, index = posisi ke berapa di array -->
-                                    <tr v-for="(item, index) in form.items" :key="index">
-                                        <!-- Dropdown nama item, v-model langsung ke items[index].nama_item -->
-                                        <td class="px-3 py-2">
-                                            <select v-model="item.nama_item" class="w-full border-gray-300 rounded-md text-sm">
-                                                <option v-for="opt in itemOptions" :key="opt" :value="opt">{{ opt }}</option>
+
+                                <tbody
+                                    class="divide-y divide-gray-200"
+                                >
+
+                                    <tr
+                                        v-for="(item, index) in form.items"
+                                        :key="index"
+                                    >
+
+                                        <!-- Nama Item -->
+
+                                        <td class="px-3 py-2 align-top">
+
+                                            <select
+                                                v-model="item.nama_item"
+                                                class="w-full border-gray-300 rounded-md text-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                            >
+
+                                                <option
+                                                    v-for="opt in itemOptions"
+                                                    :key="opt"
+                                                    :value="opt"
+                                                >
+                                                    {{ opt }}
+                                                </option>
+
                                             </select>
-                                            <!-- Error spesifik untuk baris ini, misal form.errors['items.0.nama_item'] -->
-                                            <p v-if="form.errors[`items.${index}.nama_item`]" class="text-xs text-red-600 mt-1">
-                                                {{ form.errors[`items.${index}.nama_item`] }}
+
+                                            <p
+                                                v-if="
+                                                    form.errors[
+                                                        `items.${index}.nama_item`
+                                                    ]
+                                                "
+                                                class="text-xs text-red-600 mt-1"
+                                            >
+                                                {{
+                                                    form.errors[
+                                                        `items.${index}.nama_item`
+                                                    ]
+                                                }}
                                             </p>
+
                                         </td>
 
-                                        <!-- Input jumlah -->
-                                        <td class="px-3 py-2">
-                                            <input type="number" min="1" max="10000" v-model.number="item.jumlah"
-                                                   class="w-full border-gray-300 rounded-md text-sm" />
+
+                                        <!-- Jumlah -->
+
+                                        <td class="px-3 py-2 align-top">
+
+                                            <input
+                                                type="number"
+                                                min="1"
+                                                max="10000"
+                                                step="1"
+                                                v-model.number="item.jumlah"
+                                                class="w-full border-gray-300 rounded-md text-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                            />
+
+                                            <p
+                                                v-if="
+                                                    form.errors[
+                                                        `items.${index}.jumlah`
+                                                    ]
+                                                "
+                                                class="text-xs text-red-600 mt-1"
+                                            >
+                                                {{
+                                                    form.errors[
+                                                        `items.${index}.jumlah`
+                                                    ]
+                                                }}
+                                            </p>
+
                                         </td>
 
-                                        <!-- Dropdown kondisi -->
-                                        <td class="px-3 py-2">
-                                            <select v-model="item.kondisi" class="w-full border-gray-300 rounded-md text-sm">
-                                                <option v-for="opt in kondisiOptions" :key="opt" :value="opt">{{ opt }}</option>
+
+                                        <!-- Kondisi -->
+
+                                        <td class="px-3 py-2 align-top">
+
+                                            <select
+                                                v-model="item.kondisi"
+                                                class="w-full border-gray-300 rounded-md text-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                            >
+
+                                                <option
+                                                    v-for="opt in kondisiOptions"
+                                                    :key="opt"
+                                                    :value="opt"
+                                                >
+                                                    {{ opt }}
+                                                </option>
+
                                             </select>
+
+                                            <p
+                                                v-if="
+                                                    form.errors[
+                                                        `items.${index}.kondisi`
+                                                    ]
+                                                "
+                                                class="text-xs text-red-600 mt-1"
+                                            >
+                                                {{
+                                                    form.errors[
+                                                        `items.${index}.kondisi`
+                                                    ]
+                                                }}
+                                            </p>
+
                                         </td>
 
-                                        <!-- Input keterangan (opsional) -->
-                                        <td class="px-3 py-2">
-                                            <input type="text" v-model="item.keterangan" placeholder="Opsional"
-                                                   class="w-full border-gray-300 rounded-md text-sm" />
+
+                                        <!-- Keterangan -->
+
+                                        <td class="px-3 py-2 align-top">
+
+                                            <label
+                                                class="block text-xs font-medium text-gray-600 mb-1"
+                                            >
+                                                Keterangan
+
+                                                <span
+                                                    v-if="
+                                                        membutuhkanKeterangan(
+                                                            item.kondisi
+                                                        )
+                                                    "
+                                                    class="text-red-600"
+                                                >
+                                                    *
+                                                </span>
+                                            </label>
+
+                                            <input
+                                                type="text"
+                                                v-model="item.keterangan"
+                                                :placeholder="
+                                                    membutuhkanKeterangan(
+                                                        item.kondisi
+                                                    )
+                                                        ? 'Jelaskan kondisi linen'
+                                                        : 'Opsional'
+                                                "
+                                                maxlength="255"
+                                                class="w-full border-gray-300 rounded-md text-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                            />
+
+                                            <p
+                                                v-if="
+                                                    form.errors[
+                                                        `items.${index}.keterangan`
+                                                    ]
+                                                "
+                                                class="text-xs text-red-600 mt-1"
+                                            >
+                                                {{
+                                                    form.errors[
+                                                        `items.${index}.keterangan`
+                                                    ]
+                                                }}
+                                            </p>
+
                                         </td>
 
-                                        <!-- Tombol hapus baris. disabled kalau baris tinggal 1 (tidak boleh kosong) -->
-                                        <td class="px-3 py-2 text-center">
-                                            <button type="button" @click="hapusItem(index)"
-                                                    :disabled="form.items.length <= 1"
-                                                    class="text-red-600 hover:text-red-800 font-bold disabled:opacity-30 disabled:cursor-not-allowed">
+
+                                        <!-- Aksi -->
+
+                                        <td
+                                            class="px-3 py-2 text-center align-top"
+                                        >
+
+                                            <button
+                                                type="button"
+                                                @click="hapusItem(index)"
+                                                :disabled="
+                                                    form.items.length <= 1
+                                                "
+                                                title="Hapus item"
+                                                class="text-red-600 hover:text-red-800 font-bold disabled:opacity-30 disabled:cursor-not-allowed"
+                                            >
                                                 &times;
                                             </button>
+
                                         </td>
+
                                     </tr>
+
                                 </tbody>
+
                             </table>
+
                         </div>
 
-                        <!-- Tombol tambah baris baru -->
-                        <button type="button" @click="tambahItem"
-                                class="mt-4 inline-flex items-center px-3 py-1.5 bg-green-600 text-white text-xs font-semibold rounded-md hover:bg-green-700">
+
+                        <!-- Tombol Tambah Item -->
+
+                        <button
+                            type="button"
+                            @click="tambahItem"
+                            class="mt-4 inline-flex items-center px-3 py-1.5 bg-green-600 text-white text-xs font-semibold rounded-md hover:bg-green-700"
+                        >
                             + Tambah Item
                         </button>
+
                     </div>
 
-                    <!-- Tombol submit -->
+
+                    <!--
+                    |--------------------------------------------------------------------------
+                    | TOMBOL SUBMIT
+                    |--------------------------------------------------------------------------
+                    -->
+
                     <div class="flex justify-end">
-                        <!-- :disabled="form.processing" mencegah submit dobel selagi request masih berjalan -->
-                        <button type="submit" :disabled="form.processing"
-                                class="inline-flex items-center px-4 py-2 bg-gray-800 text-white rounded-md text-xs font-semibold uppercase tracking-widest hover:bg-gray-700 disabled:opacity-50">
-                            Simpan Data Penerimaan
+
+                        <button
+                            type="submit"
+                            :disabled="form.processing"
+                            class="inline-flex items-center px-4 py-2 bg-gray-800 text-white rounded-md text-xs font-semibold uppercase tracking-widest hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+
+                            <span v-if="form.processing">
+                                Menyimpan...
+                            </span>
+
+                            <span v-else>
+                                Simpan Data Penerimaan
+                            </span>
+
                         </button>
+
                     </div>
+
                 </form>
+
             </div>
+
         </div>
+
     </AuthenticatedLayout>
 </template>

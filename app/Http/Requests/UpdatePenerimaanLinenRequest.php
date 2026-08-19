@@ -9,112 +9,243 @@ use Illuminate\Validation\Rule;
 
 class UpdatePenerimaanLinenRequest extends FormRequest
 {
+    /**
+     * Determine if the user is authorized to make this request.
+     */
     public function authorize(): bool
     {
         return true;
     }
 
+    /**
+     * Get the validation rules that apply to the request.
+     */
     public function rules(): array
-{
-    return [
-        'tanggal' => [
-            'required',
-            'date',
-            'before_or_equal:today',
-        ],
+    {
+        return [
+            /*
+            |--------------------------------------------------------------------------
+            | Data Utama Penerimaan
+            |--------------------------------------------------------------------------
+            */
 
-        'jam' => [
-            'required',
-            'date_format:H:i',
-        ],
+            'tanggal' => [
+                'required',
+                'date',
+                'before_or_equal:today',
+            ],
 
-        'ruangan' => [
-            'required',
-            Rule::in(PenerimaanLinen::RUANGAN),
-        ],
+            'jam' => [
+                'required',
+                'date_format:H:i',
+            ],
 
-        'items' => [
-            'required',
-            'array',
-            'min:1',
-        ],
+            'ruangan' => [
+                'required',
+                Rule::in(PenerimaanLinen::RUANGAN),
+            ],
 
-        'items.*.nama_item' => [
-            'required',
-            Rule::in(ItemLinen::NAMA_ITEM),
-            'distinct',
-        ],
+            /*
+            |--------------------------------------------------------------------------
+            | Detail Linen
+            |--------------------------------------------------------------------------
+            */
 
-        'items.*.jumlah' => [
-            'required',
-            'integer',
-            'min:1',
-            'max:10000',
-        ],
+            'items' => [
+                'required',
+                'array',
+                'min:1',
+            ],
 
-        'items.*.kondisi' => [
-            'required',
-            Rule::in(ItemLinen::KONDISI),
-        ],
+            'items.*.nama_item' => [
+                'required',
+                Rule::in(ItemLinen::NAMA_ITEM),
+                'distinct',
+            ],
 
-        'items.*.keterangan' => [
-            'nullable',
-            'string',
-            'max:255',
-        ],
-    ];
-}
+            'items.*.jumlah' => [
+                'required',
+                'integer',
+                'min:1',
+                'max:10000',
+            ],
 
+            'items.*.kondisi' => [
+                'required',
+                Rule::in(ItemLinen::KONDISI),
+            ],
+
+            'items.*.keterangan' => [
+                'nullable',
+                'string',
+                'max:255',
+            ],
+        ];
+    }
+
+    /**
+     * Additional business validation.
+     */
+    public function withValidator($validator): void
+    {
+        $validator->after(function ($validator) {
+            foreach ($this->input('items', []) as $index => $item) {
+                $kondisi = $item['kondisi'] ?? null;
+                $keterangan = trim($item['keterangan'] ?? '');
+
+                /*
+                 * Kondisi Noda dan Rusak wajib memiliki keterangan.
+                 */
+                if (
+                    in_array(
+                        $kondisi,
+                        ItemLinen::KONDISI_WAJIB_KETERANGAN,
+                        true
+                    )
+                    && $keterangan === ''
+                ) {
+                    $validator->errors()->add(
+                        "items.$index.keterangan",
+                        'Keterangan wajib diisi untuk linen dengan kondisi Noda atau Rusak.'
+                    );
+                }
+            }
+        });
+    }
+
+    /**
+     * Get custom messages for validator errors.
+     */
     public function messages(): array
-                {
-                    return [
-                        'tanggal.required' =>
-                            'Tanggal penerimaan wajib diisi.',
+    {
+        return [
+            /*
+            |--------------------------------------------------------------------------
+            | Tanggal
+            |--------------------------------------------------------------------------
+            */
 
-                        'tanggal.date' =>
-                            'Format tanggal tidak valid.',
+            'tanggal.required' =>
+                'Tanggal penerimaan wajib diisi.',
 
-                        'tanggal.before_or_equal' =>
-                            'Tanggal penerimaan tidak boleh melebihi hari ini.',
+            'tanggal.date' =>
+                'Format tanggal penerimaan tidak valid.',
 
-                        'jam.required' =>
-                            'Jam penerimaan wajib diisi.',
+            'tanggal.before_or_equal' =>
+                'Tanggal penerimaan tidak boleh melebihi hari ini.',
 
-                        'jam.date_format' =>
-                            'Format jam harus HH:MM.',
+            /*
+            |--------------------------------------------------------------------------
+            | Jam
+            |--------------------------------------------------------------------------
+            */
 
-                        'ruangan.required' =>
-                            'Ruangan wajib dipilih.',
+            'jam.required' =>
+                'Jam penerimaan wajib diisi.',
 
-                        'items.required' =>
-                            'Minimal harus ada 1 item linen.',
+            'jam.date_format' =>
+                'Format jam penerimaan harus HH:MM.',
 
-                        'items.min' =>
-                            'Minimal harus ada 1 item linen.',
+            /*
+            |--------------------------------------------------------------------------
+            | Ruangan
+            |--------------------------------------------------------------------------
+            */
 
-                        'items.*.nama_item.required' =>
-                            'Nama item linen wajib dipilih.',
+            'ruangan.required' =>
+                'Ruangan wajib dipilih.',
 
-                        'items.*.nama_item.distinct' =>
-                            'Item linen yang sama tidak boleh dimasukkan lebih dari satu kali.',
+            'ruangan.in' =>
+                'Ruangan yang dipilih tidak valid.',
 
-                        'items.*.jumlah.required' =>
-                            'Jumlah linen wajib diisi.',
+            /*
+            |--------------------------------------------------------------------------
+            | Items
+            |--------------------------------------------------------------------------
+            */
 
-                        'items.*.jumlah.integer' =>
-                            'Jumlah linen harus berupa angka.',
+            'items.required' =>
+                'Data linen wajib diisi.',
 
-                        'items.*.jumlah.min' =>
-                            'Jumlah linen minimal 1.',
+            'items.array' =>
+                'Format data linen tidak valid.',
 
-                        'items.*.jumlah.max' =>
-                            'Jumlah linen tidak boleh lebih dari 10.000.',
+            'items.min' =>
+                'Minimal harus ada 1 item linen.',
 
-                        'items.*.kondisi.required' =>
-                            'Kondisi linen wajib dipilih.',
+            /*
+            |--------------------------------------------------------------------------
+            | Nama Item
+            |--------------------------------------------------------------------------
+            */
 
-                        'items.*.keterangan.max' =>
-                            'Keterangan maksimal 255 karakter.',
-                    ];
-}
+            'items.*.nama_item.required' =>
+                'Nama item linen wajib dipilih.',
+
+            'items.*.nama_item.in' =>
+                'Item linen yang dipilih tidak valid.',
+
+            'items.*.nama_item.distinct' =>
+                'Item linen yang sama tidak boleh dimasukkan lebih dari satu kali.',
+
+            /*
+            |--------------------------------------------------------------------------
+            | Jumlah
+            |--------------------------------------------------------------------------
+            */
+
+            'items.*.jumlah.required' =>
+                'Jumlah linen wajib diisi.',
+
+            'items.*.jumlah.integer' =>
+                'Jumlah linen harus berupa angka bulat.',
+
+            'items.*.jumlah.min' =>
+                'Jumlah linen minimal 1.',
+
+            'items.*.jumlah.max' =>
+                'Jumlah linen tidak boleh lebih dari 10.000.',
+
+            /*
+            |--------------------------------------------------------------------------
+            | Kondisi
+            |--------------------------------------------------------------------------
+            */
+
+            'items.*.kondisi.required' =>
+                'Kondisi linen wajib dipilih.',
+
+            'items.*.kondisi.in' =>
+                'Kondisi linen yang dipilih tidak valid.',
+
+            /*
+            |--------------------------------------------------------------------------
+            | Keterangan
+            |--------------------------------------------------------------------------
+            */
+
+            'items.*.keterangan.string' =>
+                'Keterangan harus berupa teks.',
+
+            'items.*.keterangan.max' =>
+                'Keterangan maksimal 255 karakter.',
+        ];
+    }
+
+    /**
+     * Get custom attribute names for validator errors.
+     */
+    public function attributes(): array
+    {
+        return [
+            'tanggal' => 'tanggal penerimaan',
+            'jam' => 'jam penerimaan',
+            'ruangan' => 'ruangan',
+            'items' => 'data linen',
+            'items.*.nama_item' => 'nama item linen',
+            'items.*.jumlah' => 'jumlah linen',
+            'items.*.kondisi' => 'kondisi linen',
+            'items.*.keterangan' => 'keterangan',
+        ];
+    }
 }

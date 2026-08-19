@@ -13,7 +13,16 @@ class ItemLinen extends Model
         'Mukena', 'Sejadah', 'Bedset', 'Gorden', 'Sneli Dokter',
     ];
 
-    public const KONDISI = ['Baik', 'Noda', 'Rusak'];
+    public const KONDISI = [
+    'Baik',
+    'Noda',
+    'Rusak',
+    ];
+
+    public const KONDISI_WAJIB_KETERANGAN = [
+        'Noda',
+        'Rusak',
+    ];
 
     public $timestamps = false;
 
