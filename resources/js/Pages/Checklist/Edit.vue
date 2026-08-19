@@ -262,6 +262,7 @@ function submit() {
                                             <input
                                                 type="number"
                                                 min="1"
+                                                max="10000"
                                                 v-model.number="item.jumlah"
                                                 class="w-full border-gray-300 rounded-md text-sm"
                                             />

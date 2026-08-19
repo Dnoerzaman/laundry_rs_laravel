@@ -15,67 +15,106 @@ class UpdatePenerimaanLinenRequest extends FormRequest
     }
 
     public function rules(): array
-    {
-        return [
-            'tanggal' => [
-                'required',
-                'date',
-            ],
+{
+    return [
+        'tanggal' => [
+            'required',
+            'date',
+            'before_or_equal:today',
+        ],
 
-            'jam' => [
-                'required',
-            ],
+        'jam' => [
+            'required',
+            'date_format:H:i',
+        ],
 
-            'ruangan' => [
-                'required',
-                Rule::in(PenerimaanLinen::RUANGAN),
-            ],
+        'ruangan' => [
+            'required',
+            Rule::in(PenerimaanLinen::RUANGAN),
+        ],
 
-            'items' => [
-                'required',
-                'array',
-                'min:1',
-            ],
+        'items' => [
+            'required',
+            'array',
+            'min:1',
+        ],
 
-            'items.*.nama_item' => [
-                'required',
-                Rule::in(ItemLinen::NAMA_ITEM),
-            ],
+        'items.*.nama_item' => [
+            'required',
+            Rule::in(ItemLinen::NAMA_ITEM),
+            'distinct',
+        ],
 
-            'items.*.jumlah' => [
-                'required',
-                'integer',
-                'min:1',
-            ],
+        'items.*.jumlah' => [
+            'required',
+            'integer',
+            'min:1',
+            'max:10000',
+        ],
 
-            'items.*.kondisi' => [
-                'required',
-                Rule::in(ItemLinen::KONDISI),
-            ],
+        'items.*.kondisi' => [
+            'required',
+            Rule::in(ItemLinen::KONDISI),
+        ],
 
-            'items.*.keterangan' => [
-                'nullable',
-                'string',
-                'max:255',
-            ],
-        ];
-    }
+        'items.*.keterangan' => [
+            'nullable',
+            'string',
+            'max:255',
+        ],
+    ];
+}
 
     public function messages(): array
-    {
-        return [
-            'tanggal.required' => 'Tanggal wajib diisi.',
-            'jam.required' => 'Jam wajib diisi.',
-            'ruangan.required' => 'Ruangan wajib dipilih.',
+                {
+                    return [
+                        'tanggal.required' =>
+                            'Tanggal penerimaan wajib diisi.',
 
-            'items.required' => 'Minimal harus ada 1 item linen.',
-            'items.min' => 'Minimal harus ada 1 item linen.',
+                        'tanggal.date' =>
+                            'Format tanggal tidak valid.',
 
-            'items.*.nama_item.required' => 'Nama item wajib dipilih.',
-            'items.*.jumlah.required' => 'Jumlah wajib diisi.',
-            'items.*.jumlah.integer' => 'Jumlah harus berupa angka.',
-            'items.*.jumlah.min' => 'Jumlah minimal 1.',
-            'items.*.kondisi.required' => 'Kondisi wajib dipilih.',
-        ];
-    }
+                        'tanggal.before_or_equal' =>
+                            'Tanggal penerimaan tidak boleh melebihi hari ini.',
+
+                        'jam.required' =>
+                            'Jam penerimaan wajib diisi.',
+
+                        'jam.date_format' =>
+                            'Format jam harus HH:MM.',
+
+                        'ruangan.required' =>
+                            'Ruangan wajib dipilih.',
+
+                        'items.required' =>
+                            'Minimal harus ada 1 item linen.',
+
+                        'items.min' =>
+                            'Minimal harus ada 1 item linen.',
+
+                        'items.*.nama_item.required' =>
+                            'Nama item linen wajib dipilih.',
+
+                        'items.*.nama_item.distinct' =>
+                            'Item linen yang sama tidak boleh dimasukkan lebih dari satu kali.',
+
+                        'items.*.jumlah.required' =>
+                            'Jumlah linen wajib diisi.',
+
+                        'items.*.jumlah.integer' =>
+                            'Jumlah linen harus berupa angka.',
+
+                        'items.*.jumlah.min' =>
+                            'Jumlah linen minimal 1.',
+
+                        'items.*.jumlah.max' =>
+                            'Jumlah linen tidak boleh lebih dari 10.000.',
+
+                        'items.*.kondisi.required' =>
+                            'Kondisi linen wajib dipilih.',
+
+                        'items.*.keterangan.max' =>
+                            'Keterangan maksimal 255 karakter.',
+                    ];
+}
 }

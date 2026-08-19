@@ -3,8 +3,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 // useForm: helper resmi Inertia untuk bikin object form reaktif.
 // Otomatis handle: CSRF token, kirim data ke server, isi $errors kalau validasi gagal,
-// dan status 'processing' saat sedang submit. Ini pengganti keseluruhan pola
-// {% csrf_token %} + {{ form.as_p }} + {{ form.errors }} di Django.
+// dan status 'processing' saat sedang submit.
 
 // Props dari ChecklistController@create — daftar pilihan untuk tiap dropdown
 const props = defineProps({
@@ -168,7 +167,7 @@ function submit() {
 
                                         <!-- Input jumlah -->
                                         <td class="px-3 py-2">
-                                            <input type="number" min="1" v-model.number="item.jumlah"
+                                            <input type="number" min="1" max="10000" v-model.number="item.jumlah"
                                                    class="w-full border-gray-300 rounded-md text-sm" />
                                         </td>
 
