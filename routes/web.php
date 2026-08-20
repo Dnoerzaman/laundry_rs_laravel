@@ -54,7 +54,11 @@ Route::middleware('auth')->group(function () {
         ->name('checklist.store');
 
     //Rekap Penerimaan Linen
-    Route::get('/checklist/rekap', [RekapPenerimaanLinenController::class, 'index'])->name('checklist.rekap');
+    Route::get('/checklist/rekap',[RekapPenerimaanLinenController::class, 'index'])->name('checklist.rekap');
+
+    Route::get('/checklist/rekap/export/excel',[RekapPenerimaanLinenController::class, 'exportExcel'])->name('checklist.rekap.excel');
+
+    Route::get('/checklist/rekap/export/pdf',[RekapPenerimaanLinenController::class, 'exportPdf'])->name('checklist.rekap.pdf');
 
     // Detail
     Route::get('/checklist/{penerimaan}', [ChecklistController::class, 'show'])
