@@ -3,6 +3,7 @@
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ChecklistController;
+use App\Http\Controllers\RekapPenerimaanLinenController;
 use App\Http\Controllers\BeratLinenController;
 use App\Http\Controllers\StokChemicalController;
 use App\Http\Controllers\PemakaianChemicalController;
@@ -38,9 +39,7 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     
-     // ==============================
-    // PENERIMAAN LINEN
-    // ==============================
+     // ==============================PENERIMAAN LINEN==============================
 
     // Riwayat
     Route::get('/checklist', [ChecklistController::class, 'index'])
@@ -53,6 +52,9 @@ Route::middleware('auth')->group(function () {
     // Simpan
     Route::post('/checklist', [ChecklistController::class, 'store'])
         ->name('checklist.store');
+
+    //Rekap Penerimaan Linen
+    Route::get('/checklist/rekap', [RekapPenerimaanLinenController::class, 'index'])->name('checklist.rekap');
 
     // Detail
     Route::get('/checklist/{penerimaan}', [ChecklistController::class, 'show'])

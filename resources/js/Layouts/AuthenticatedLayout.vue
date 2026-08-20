@@ -39,7 +39,7 @@ const showingNavigationDropdown = ref(false);
                                 >
                                     Dashboard
                                 </NavLink>
-                                <NavLink :href="route('checklist.create')" :active="route().current('checklist.*')">
+                                <NavLink :href="route('checklist.index')" :active="route().current('checklist.*')">
                                 Checklist Linen </NavLink>
                                 <NavLink :href="route('suhu.index')" :active="route().current('suhu.*')">Monitoring Suhu
                                 </NavLink>

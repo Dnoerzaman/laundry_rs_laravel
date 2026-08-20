@@ -65,10 +65,15 @@ function formatTanggal(tanggal) {
                 </div>
 
                 <Link
+                    :href="route('checklist.rekap')"
+                    class="inline-flex items-center px-4 py-2 bg-emerald-600 text-white rounded-md text-xs font-semibold uppercase tracking-widest hover:bg-emerald-700"
+                > Rekap Laporan
+                </Link>
+
+                <Link
                     :href="route('checklist.create')"
                     class="inline-flex items-center justify-center px-4 py-2 bg-gray-800 text-white rounded-md text-xs font-semibold uppercase tracking-widest hover:bg-gray-700"
-                >
-                    + Penerimaan Baru
+                > + Penerimaan Baru
                 </Link>
             </div>
         </template>
